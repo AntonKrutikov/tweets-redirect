@@ -1,6 +1,7 @@
 import asyncio
 import discord
 import json
+import tweepy
 import tweepy.asynchronous
 from typing import List, Union
 from aiogram import Bot, Dispatcher
@@ -35,8 +36,21 @@ class TwitterClient(tweepy.asynchronous.AsyncStream):
         for channel in self.telegram_channels:
             await self.telegram_bot.send_message(channel, tweet_url)
 
-    async def watch(self, ids:List[int]):
-        await self.filter(follow=ids)
+    def names_to_id(self, targets:List[Union[int,str]]) -> List[int]:
+        """Convert List of twitter @screenname to user_id. Because stream api accept only ids"""
+        api = tweepy.API(tweepy.OAuth1UserHandler(self.consumer_key, self.consumer_secret, self.access_token, self.access_token_secret))
+        ids = []
+        for target in targets:
+            if isinstance(target, int):
+                ids.append(target)
+            if isinstance(target, str):
+                user:tweepy.User = api.get_user(screen_name = target)
+                if user:
+                    ids.append(user.id)
+        return ids
+                
+    async def watch(self, targets:List[int]):
+        await self.filter(follow=targets)
 
 
 conf = open("./config.json")
@@ -63,6 +77,7 @@ twitter_client = TwitterClient(
     config["twitter"]["access_token"], 
     config["twitter"]["access_token_secret"]
 )
+twitter_targets = twitter_client.names_to_id(config["twitter"]["targets"])
 twitter_client.add_discord(discord_client=discord_client, channels=config["discord"]["channels"])
 twitter_client.add_telegram(telergam_bot=telegram_bot, channels=config["telegram"]["channels"])
 
@@ -70,5 +85,5 @@ twitter_client.add_telegram(telergam_bot=telegram_bot, channels=config["telegram
 loop = asyncio.get_event_loop_policy().get_event_loop()
 loop.create_task(discord_client.start(config["discord"]["token"]))
 loop.create_task(telegram_bot_run())
-loop.create_task(twitter_client.watch(config["twitter"]["targets"]))
+loop.create_task(twitter_client.watch(twitter_targets))
 loop.run_forever()
