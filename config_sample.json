@@ -1,0 +1,17 @@
+{
+    "twitter": {
+        "consumer_key": "",
+        "consumer_secret": "",
+        "access_token": "",
+        "access_token_secret": "",
+        "targets" : [190553668]
+    },
+    "discord": {
+        "token": "",
+        "channels": [934409240032989184]
+    },
+    "telegram": {
+        "token": "",
+        "channels": ["@hedytestchanell"]
+    }
+}
